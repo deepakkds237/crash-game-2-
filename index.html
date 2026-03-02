@@ -1,4 +1,50 @@
+# ==============================
+# 🎮 Crash Multiplier Web App
+# ==============================
+# How to Run:
+# 1. Install Flask -> pip install flask
+# 2. Save this file as app.py
+# 3. Run -> python app.py
+# 4. Open browser -> http://127.0.0.1:5000
 
+from flask import Flask, request, jsonify, render_template_string
+import hashlib
+
+app = Flask(__name__)
+
+# ==============================
+# 🔥 Core Crash Logic (Your Code)
+# ==============================
+
+
+
+def generate_crash(user_input):
+    user_input = float(user_input)
+    house_edge = 0.99
+
+    # Step 1: Normalize input influence (0–1)
+    influence = min(user_input / 1000.0, 1.0)
+
+    # Step 2: Deterministic hash randomness
+    hash_value = hashlib.sha256(str(user_input).encode()).hexdigest()
+    int_value = int(hash_value[:16], 16)
+    random_factor = int_value / float(0xFFFFFFFFFFFFFFFF)
+
+    # Step 3: Blend randomness + input influence
+    blended = (0.6 * random_factor) + (0.4 * influence)
+
+    # Step 4: Safe crash range mapping
+    r = blended * 0.666666
+
+    multiplier = house_edge / (1 - r)
+
+    return round(multiplier, 2)
+
+
+
+# ==============================
+# 🌐 Frontend UI (Embedded HTML)
+# ==============================
 
 HTML_PAGE = """
 <!DOCTYPE html>
@@ -146,3 +192,24 @@ function startGame() {
 </html>
 """
 
+# ==============================
+# 🚀 Routes
+# ==============================
+
+@app.route("/")
+def home():
+    return render_template_string(HTML_PAGE)
+
+@app.route("/crash", methods=["POST"])
+def crash():
+    data = request.get_json()
+    user_input = data.get("number", "0")
+    result = generate_crash(user_input)
+    return jsonify({"multiplier": result})
+
+# ==============================
+# ▶ Run Server
+# ==============================
+
+if __name__ == "__main__":
+    app.run(debug=True)
