@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Crash Multiplier Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         body {
             height: 100vh;
@@ -12,6 +13,7 @@
             justify-content:center;
             align-items:center;
             flex-direction:column;
+            overflow:hidden;
         }
 
         .plane {
@@ -75,23 +77,29 @@
 </div>
 
 <script>
+
 function generateCrash(userInput) {
+
     userInput = parseFloat(userInput);
     let house_edge = 0.99;
 
+    // Step 1: Normalize influence
     let influence = Math.min(userInput / 1000.0, 1.0);
 
-    let hash = 0;
-    let str = userInput.toString();
-    for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0;
-    }
+    // Step 2: SHA256 hash (same as Python)
+    let hash = CryptoJS.SHA256(userInput.toString()).toString();
 
-    let random_factor = Math.abs(hash % 1000000) / 1000000;
+    // First 16 hex characters (same as Python)
+    let first16 = hash.substring(0, 16);
 
+    let int_value = parseInt(first16, 16);
+
+    let random_factor = int_value / 0xFFFFFFFFFFFFFFFF;
+
+    // Step 3: Blend
     let blended = (0.6 * random_factor) + (0.4 * influence);
 
+    // Step 4: Safe range
     let r = blended * 0.666666;
 
     let multiplier = house_edge / (1 - r);
@@ -100,6 +108,7 @@ function generateCrash(userInput) {
 }
 
 function startGame() {
+
     let number = document.getElementById("number").value;
     let plane = document.getElementById("plane");
     let multiplierText = document.getElementById("multiplier");
@@ -124,6 +133,7 @@ function startGame() {
         plane.style.animation = `crash 1.5s ease-in forwards`;
     }, duration * 1000);
 }
+
 </script>
 
 </body>
